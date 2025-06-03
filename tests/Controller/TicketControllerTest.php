@@ -731,6 +731,20 @@ class TicketControllerTest extends WebTestCase
         $ticket->method('getFirstAssignedAt')->willReturn(new \DateTime());
         $ticket->method('getLastAssignedAt')->willReturn(new \DateTime());
         
+        // Mock the toArray method for JSON serialization
+        $ticket->method('toArray')->willReturn([
+            'id' => $id,
+            'owner' => null,
+            'assignedTo' => null,
+            'title' => $title,
+            'description' => 'Test description',
+            'priority' => 'normale',
+            'status' => 'pending',
+            'createdAt' => (new \DateTime())->format('Y-m-d H:i:s'),
+            'firstAssignedAt' => (new \DateTime())->format('Y-m-d H:i:s'),
+            'lastAssignedAt' => (new \DateTime())->format('Y-m-d H:i:s'),
+        ]);
+        
         return $ticket;
     }
 

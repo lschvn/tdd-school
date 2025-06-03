@@ -3,6 +3,7 @@
 namespace App\Tests\Service;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use App\Service\TicketService;
 use App\Entity\Ticket;
 use App\Entity\User;

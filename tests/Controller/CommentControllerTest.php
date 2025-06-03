@@ -7,7 +7,7 @@ use App\Entity\Comment;
 use App\Entity\User;
 use App\Entity\Ticket;
 
-class CommentEntityTest extends TestCase
+class CommentControllerTest extends TestCase
 {
     public function testAddComment(): void
     {
@@ -23,7 +23,7 @@ class CommentEntityTest extends TestCase
         $this->assertSame($user, $comment->getAuthor());
         $this->assertSame($ticket, $comment->getTicket());
         $this->assertSame($content, $comment->getContent());
-        $this->assertInstanceOf(\DateTimeImmutable::class, $comment->getCreatedAt());
+        $this->assertInstanceOf(\DateTime::class, $comment->getCreatedAt());
     }
 
     public function testDeleteComment(): void

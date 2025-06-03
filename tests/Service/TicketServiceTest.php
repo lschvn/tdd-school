@@ -30,10 +30,8 @@ use App\Entity\User;
  * - getTicketsByOwner(): List tickets created by current user
  * - getTicketsByAssignee(): List tickets assigned to current user
  */
-
 class TicketServiceTest extends TestCase
 {
-    private TicketService $ticketService;
     private User $mockOwner;
     private User $mockAssignedTo;
 

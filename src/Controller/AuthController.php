@@ -22,66 +22,56 @@ class AuthController extends AbstractController
     public function login(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
         if (!isset($data['email']) || !isset($data['password'])) {
             return new JsonResponse(['error' => 'Email and password required'], 400);
         }
 
-        // For testing purposes, simulate login logic
         $userRepository = $this->entityManager->getRepository(User::class);
         $user = $userRepository->findOneBy(['email' => $data['email']]);
-
         if (!$user) {
-            // Create a test user if it doesn't exist
-            if ($data['email'] === 'user@example.com') {
-                $user = new User();
-                $user->setEmail($data['email']);
-                $user->setPassword($this->passwordHasher->hashPassword($user, $data['password']));
-                $user->setRoles(['ROLE_USER']);
-                
-                $this->entityManager->persist($user);
-                $this->entityManager->flush();
-            } else {
-                return new JsonResponse(['error' => 'Invalid credentials'], 401);
-            }
+            return new JsonResponse(['error' => 'Invalid credentials'], 401);
         }
 
-        // For testing purposes, return a fake token
-        if ($data['password'] === 'password123' || $data['email'] === 'user@example.com') {
-            return new JsonResponse([
-                'token' => 'FAKE_JWT_TOKEN_' . base64_encode($user->getEmail()),
-                'user' => [
-                    'id' => $user->getId(),
-                    'email' => $user->getEmail(),
-                    'roles' => $user->getRoles()
-                ]
-            ]);
+        if (!$this->passwordHasher->isPasswordValid($user, $data['password'])) {
+            return new JsonResponse(['error' => 'Invalid credentials'], 401);
         }
 
-        return new JsonResponse(['error' => 'Invalid credentials'], 401);
+        $token = 'FAKE_JWT_TOKEN_' . base64_encode($user->getEmail());
+        return new JsonResponse([
+            'token' => $token,
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'roles' => $user->getRoles()
+            ]
+        ]);
     }
 
     #[Route('/me', name: 'api_me', methods: ['GET'])]
     public function getCurrentUser(Request $request): JsonResponse
     {
-        // For testing purposes, simulate token validation
         $authHeader = $request->headers->get('Authorization');
-        
         if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
             return new JsonResponse(['error' => 'Missing or invalid token'], 401);
         }
-
-        $token = substr($authHeader, 7); // Remove "Bearer "
-        
-        // Simple mock validation
-        if (str_starts_with($token, 'FAKE_JWT_TOKEN')) {
-            return new JsonResponse([
-                'id' => 1,
-                'email' => 'user@example.com',
-                'roles' => ['ROLE_USER']
-            ]);
+        $token = substr($authHeader, 7);
+        if (!str_starts_with($token, 'FAKE_JWT_TOKEN_')) {
+            return new JsonResponse(['error' => 'Invalid token'], 401);
         }
-
-        return new JsonResponse(['error' => 'Invalid token'], 401);
+        $encodedEmail = substr($token, strlen('FAKE_JWT_TOKEN_'));
+        $email = base64_decode($encodedEmail);
+        if (!$email) {
+            return new JsonResponse(['error' => 'Invalid token'], 401);
+        }
+        $userRepository = $this->entityManager->getRepository(User::class);
+        $user = $userRepository->findOneBy(['email' => $email]);
+        if (!$user) {
+            return new JsonResponse(['error' => 'Invalid token'], 401);
+        }
+        return new JsonResponse([
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'roles' => $user->getRoles()
+        ]);
     }
 }

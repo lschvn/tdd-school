@@ -2,20 +2,32 @@
 
 namespace App\Tests\Controller;
 
+use App\Tests\DataFixtures\UserFixtures;
+use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
+use Doctrine\Common\DataFixtures\Loader;
+use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthControllerTest extends WebTestCase
 {
     public function testLoginWithValidCredentials(): void
     {
-        // Arrange
         $client = static::createClient();
+        $container = $client->getContainer();
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+
+        $loader = new Loader();
+        $loader->addFixture(new UserFixtures($container->get('security.password_hasher')));
+        $purger = new ORMPurger($entityManager);
+        $executor = new ORMExecutor($entityManager, $purger);
+        $executor->execute($loader->getFixtures());
+
         $payload = [
             'email' => 'user@example.com',
             'password' => 'password123'
         ];
 
-        // Act
         $client->request(
             'POST',
             '/api/login',
@@ -25,9 +37,8 @@ class AuthControllerTest extends WebTestCase
             json_encode($payload)
         );
 
-        // Assert
         $this->assertResponseIsSuccessful();
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
         $this->assertJson($client->getResponse()->getContent());
 
         $data = json_decode($client->getResponse()->getContent(), true);
@@ -36,14 +47,21 @@ class AuthControllerTest extends WebTestCase
 
     public function testLoginWithInvalidCredentials(): void
     {
-        // Arrange
         $client = static::createClient();
+        $container = $client->getContainer();
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+
+        $loader = new Loader();
+        $loader->addFixture(new UserFixtures($container->get('security.password_hasher')));
+        $purger = new ORMPurger($entityManager);
+        $executor = new ORMExecutor($entityManager, $purger);
+        $executor->execute($loader->getFixtures());
+
         $payload = [
             'email' => 'wrong@example.com',
             'password' => 'wrongpass'
         ];
 
-        // Act
         $client->request(
             'POST',
             '/api/login',
@@ -53,31 +71,51 @@ class AuthControllerTest extends WebTestCase
             json_encode($payload)
         );
 
-        // Assert
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
     }
 
     public function testGetCurrentUserWithValidToken(): void
     {
-        // Arrange
         $client = static::createClient();
+        $container = $client->getContainer();
+        $entityManager = $container->get('doctrine.orm.entity_manager');
 
-        $fakeToken = 'FAKE_JWT_TOKEN';
+        $loader = new Loader();
+        $loader->addFixture(new UserFixtures($container->get('security.password_hasher')));
+        $purger = new ORMPurger($entityManager);
+        $executor = new ORMExecutor($entityManager, $purger);
+        $executor->execute($loader->getFixtures());
 
-        // Act
+        // First login to get a valid token
+        $payload = [
+            'email' => 'user@example.com',
+            'password' => 'password123'
+        ];
+
+        $client->request(
+            'POST',
+            '/api/login',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode($payload)
+        );
+
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $token = $data['token'];
+
         $client->request(
             'GET',
             '/api/me',
             [],
             [],
             [
-                'HTTP_Authorization' => 'Bearer ' . $fakeToken,
+                'HTTP_Authorization' => 'Bearer ' . $token,
                 'CONTENT_TYPE' => 'application/json'
             ]
         );
 
-        // Assert
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
         $this->assertJson($client->getResponse()->getContent());
 
         $data = json_decode($client->getResponse()->getContent(), true);

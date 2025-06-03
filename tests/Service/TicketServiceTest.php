@@ -138,9 +138,7 @@ class TicketServiceTest extends TestCase
         $this->assertLessThanOrEqual($now, $ticket->getLastAssignedAt());
     }
 
-    /**
-     * @dataProvider validPriorityProvider
-     */
+    #[DataProvider('validPriorityProvider')]
     public function testCreateTicketWithValidPriorities(string $priority): void
     {
         if (!class_exists('App\Service\TicketService') || !class_exists('App\Entity\Ticket')) {
@@ -170,9 +168,7 @@ class TicketServiceTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider validStatusProvider
-     */
+    #[DataProvider('validStatusProvider')]
     public function testCreateTicketWithValidStatuses(string $status): void
     {
         if (!class_exists('App\Service\TicketService') || !class_exists('App\Entity\Ticket')) {

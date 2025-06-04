@@ -59,7 +59,7 @@ class CascadeDeleteTest extends TestCase
 
         $comments = [$comment1, $comment2, $comment3];
 
-        // 🧠 Simule la suppression de l'utilisateur en remplaçant par un autre user
+        // Simule la suppression de l'utilisateur en remplaçant par un autre user
         $userSupprime = new User(); // autre objet
         foreach ($comments as $comment) {
             if ($comment->getAuthor() === $user) {
